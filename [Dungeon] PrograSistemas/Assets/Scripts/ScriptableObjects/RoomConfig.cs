@@ -7,13 +7,4 @@ public class RoomConfig : ScriptableObject
 {
     public int easyDiffPoints;
     public int hardDiffPoints;
-
-    public Transform[] enemySpawns;
-
-    [Serializable]
-    public class EnemyConfig
-    {
-        public GameObject enemyPrefab;
-        public int difficultyValue;
-    }
 }

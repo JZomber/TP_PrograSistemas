@@ -5,24 +5,35 @@ using UnityEngine;
 
 public class RoomManager : MonoBehaviour
 {
+    private ModularRooms activeRoom;
+    
     private void OnEnable()
     {
         ModularRooms.OnPlayerEnteredRoom += HandlePlayerEnteredRoom;
+
+        EnemyManager.OnRoomCompleted += HandlerRoomCompleted;
     }
 
     private void OnDisable()
     {
         ModularRooms.OnPlayerEnteredRoom -= HandlePlayerEnteredRoom;
+        
+        EnemyManager.OnRoomCompleted -= HandlerRoomCompleted;
     }
 
     private void HandlePlayerEnteredRoom(ModularRooms room)
     {
-        StartCoroutine(UnlockRoomAfterDelay(room, 3f)); //Espera 3 segundos antes de ejecutarse
+        activeRoom = room;
+    }
+
+    private void HandlerRoomCompleted()
+    {
+        StartCoroutine(UnlockRoomAfterDelay(2f));
     }
     
-    private IEnumerator UnlockRoomAfterDelay(ModularRooms room, float delay)
+    private IEnumerator UnlockRoomAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        room.UnlockRoom();
+        activeRoom.UnlockRoom();
     }
 }

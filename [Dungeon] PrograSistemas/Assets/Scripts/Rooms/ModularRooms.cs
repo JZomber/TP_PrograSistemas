@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -14,28 +15,43 @@ public class ModularRooms : MonoBehaviour
 {
     [SerializeField] private Exit[] exits = new Exit[4];
 
-    [SerializeField] private List<GameObject> doorsList = new List<GameObject>();
+    [SerializeField] private Enemy[] enemies = new Enemy[4];
+
+    [SerializeField] private List<GameObject> doorsList;
+    
+    [SerializeField] private List<Transform> enemySpawnsList;
+
+    private int maxEnemiesAmount;
+    
+    public static event Action<ModularRooms> OnPlayerEnteredRoom;
+    
+    //public static event Action<ModularRooms> OnRoomUnlocked; //Si tiene que pasar algo cuando se desbloquea una sala.
+    
+    public event Action<List<GameObject>, List<Transform>> OnSpawnEnemiesRequest;
 
     [SerializeField] private RoomConfig roomConfig;
     
-    private Vector2 spawnPosition;
-
-    public static event Action<ModularRooms> OnPlayerEnteredRoom;
-    //public static event Action<ModularRooms> OnRoomUnlocked; //Si tiene que pasar algo cuando se desbloquea una sala.
-
     [SerializeField] private Collider2D roomTrigger;
-    [SerializeField] private bool unlocked;
 
     [SerializeField] private GameObject easyRoomDesign;
     [SerializeField] private GameObject hardRoomDesign;
     
+    [SerializeField] private bool unlocked;
+    [SerializeField] private bool playerSpawn;
+    
     private enum Difficulty { Easy, Hard }
     private Difficulty selectedDifficulty;
     
-    private int difficultyPoints;
+    private int maxDifficultyPoints;
+
+    private List<GameObject> enemiesSelected;
+    private List<Transform> enemiesSelectedSpawns;
 
     private void Awake()
     {
+        enemiesSelected = new List<GameObject>();
+        enemiesSelectedSpawns = new List<Transform>();
+        
         if (Application.isPlaying)
         {
             UpdateExits();
@@ -45,10 +61,17 @@ public class ModularRooms : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        maxEnemiesAmount = enemySpawnsList.Count;
+        
         if (Application.isPlaying)
         {
             UpdateExits();
-            SelectDifficulty();
+
+            if (!playerSpawn)
+            {
+                SelectDifficulty();
+                EnemySelector();
+            }
         }
     }
 
@@ -60,14 +83,6 @@ public class ModularRooms : MonoBehaviour
         //OnRoomUnlocked?.Invoke(this); //Si tiene que pasar algo cuando se desbloquea una sala.
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player") && !unlocked)
-        {
-            OnPlayerEnteredRoom?.Invoke(this);
-        }
-    }
-
     private void SelectDifficulty()
     {
         int randomValue = Random.Range(0, 2);
@@ -75,19 +90,67 @@ public class ModularRooms : MonoBehaviour
 
         if (selectedDifficulty == Difficulty.Easy)
         {
-            difficultyPoints = roomConfig.easyDiffPoints;
-            Debug.Log($"SALA {this} | DIFICULTAD {selectedDifficulty} | PUNTOS {difficultyPoints}");
+            maxDifficultyPoints = roomConfig.easyDiffPoints;
+            //Debug.Log($"SALA {this} | DIFICULTAD {selectedDifficulty} | PUNTOS {maxDifficultyPoints}");
+            
             hardRoomDesign.SetActive(false);
             easyRoomDesign.SetActive(true);
         }
         else
         {
-            difficultyPoints = roomConfig.hardDiffPoints;
-            Debug.Log($"SALA {this} | DIFICULTAD {selectedDifficulty} | PUNTOS {difficultyPoints}");
+            maxDifficultyPoints = roomConfig.hardDiffPoints;
+            //Debug.Log($"SALA {this} | DIFICULTAD {selectedDifficulty} | PUNTOS {maxDifficultyPoints}");
 
             hardRoomDesign.SetActive(true);
             easyRoomDesign.SetActive(false);
         }
+    }
+
+    private void EnemySelector()
+    {
+        var filteredEnemies = enemies;
+
+        //enemies.Where(e => selectedDifficulty == Difficulty.Hard || !e.isHardOnly);
+        
+        filteredEnemies.Shuffle();
+
+        int totalDiffPoints = 0;
+        int attempts = 0;
+
+        // for(int i = 0; i < filteredEnemies.Length; i++)
+        // {
+        //     Debug.Log($"Nombre: {filteredEnemies[i].enemyPrefab.name} | Posición: {i}");
+        // }
+
+        while (totalDiffPoints != maxDifficultyPoints && attempts < filteredEnemies.Length)
+        {
+            foreach (var enemy in filteredEnemies)
+            {
+                if (enemiesSelected.Count < maxEnemiesAmount && totalDiffPoints + enemy.diffPoints <= maxDifficultyPoints)
+                {
+                    enemiesSelected.Add(enemy.enemyPrefab);
+                    totalDiffPoints += enemy.diffPoints;
+                }
+                else if (totalDiffPoints + enemy.diffPoints > maxDifficultyPoints)
+                {
+                    continue;
+                }
+
+                if (totalDiffPoints == maxDifficultyPoints)
+                {
+                    break;
+                }
+            }
+            
+            attempts++;
+        }
+        
+        enemiesSelectedSpawns = enemySpawnsList.Take(enemiesSelected.Count).ToList();
+    }
+
+    private void PlayerEnteredNewRoom()
+    {
+        OnSpawnEnemiesRequest?.Invoke(enemiesSelected, enemiesSelectedSpawns);
     }
 
     private void UpdateExits()
@@ -114,6 +177,15 @@ public class ModularRooms : MonoBehaviour
                     teleportTrigger.Initialize(exit.teleportPosition);
                 }
             }
+        }
+    }
+    
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player") && !unlocked)
+        {
+            OnPlayerEnteredRoom?.Invoke(this);
+            PlayerEnteredNewRoom();
         }
     }
     
@@ -144,6 +216,14 @@ public class ModularRooms : MonoBehaviour
         public GameObject wallObject;
         public Collider2D teleportTrigger;
         public Transform teleportPosition;
+    }
+    
+    [Serializable]
+    public class Enemy
+    {
+        public GameObject enemyPrefab;
+        public int diffPoints;
+        //public bool isHardOnly;
     }
     
     public enum Direction

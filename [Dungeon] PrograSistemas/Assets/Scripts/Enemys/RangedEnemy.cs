@@ -7,13 +7,12 @@ public class RangedEnemy : MonoBehaviour
 {
     [SerializeField] private Transform[] shootingOrig; //Origen de las balas
     [SerializeField] private GameObject bulletPrefab; //Prefab de bullet (enemy)
-    private int totalShootOrigin; //Total de orígenes (depende del arma)
+    private int totalShootOrigin; //Total de orï¿½genes (depende del arma)
 
     private float coolDown;
     [SerializeField] private float shootCoolDown;
 
     [SerializeField] private GameObject weapon; //Prefab del arma
-    WeaponScript weaponScript;
     private bool isSmg;
     public bool canShoot = true;
     public bool isWeaponActive = true;
@@ -29,16 +28,14 @@ public class RangedEnemy : MonoBehaviour
         
         coolDown = shootCoolDown; //Cooldown entre disparos
 
-        totalShootOrigin = weapon.transform.childCount; //Obtengo el número de orígenes de balas
-        shootingOrig = new Transform[totalShootOrigin]; //Inicializo la lista según la cantidad
+        totalShootOrigin = weapon.transform.childCount; //Obtengo el nï¿½mero de orï¿½genes de balas
+        shootingOrig = new Transform[totalShootOrigin]; //Inicializo la lista segï¿½n la cantidad
 
         for (int i = 0; i < totalShootOrigin; i++)
         {
-            shootingOrig[i] = weapon.transform.GetChild(i).transform; //Obtengo la posición de cada origen
+            shootingOrig[i] = weapon.transform.GetChild(i).transform; //Obtengo la posiciï¿½n de cada origen
         }
         
-        weaponScript = weapon.GetComponent<WeaponScript>();
-
     }
     
     // Update is called once per frame
@@ -46,23 +43,36 @@ public class RangedEnemy : MonoBehaviour
     {
         coolDown -= Time.deltaTime;
 
-        if (coolDown <= 0f && canShoot)
+        if (coolDown <= 0f && canShoot && !isSmg)
         {
-            
             for (int i = 0; i < shootingOrig.Length; i++)
             {
-                if (weaponScript != null) 
-                {
-                    weaponScript.Shoot(shootingOrig[i]);
-                }
-               
-                
+                var rotation = shootingOrig[i].rotation;
+                rotation *= Quaternion.Euler(0, 0, -90);
+                Instantiate(bulletPrefab, shootingOrig[i].position, rotation);
             }
             
             coolDown = shootCoolDown;
-        }      
+        }
+        else if (coolDown <= 0f && canShoot && isSmg)
+        {
+            StartCoroutine(ShootSMG(0.2f)); //Delay entre disparos
+            
+            coolDown = shootCoolDown;
+        }
     }
-   
+
+    private IEnumerator ShootSMG(float delay)
+    {
+        for (int i = 0; i < 3; i++) //Cantidad de veces que dispararï¿½ el arma (3 disparos - efecto rï¿½faga)
+        {
+            yield return new WaitForSeconds(delay);
+        
+            var rotation = shootingOrig[0].rotation;
+            rotation *= Quaternion.Euler(0, 0, -90);
+            Instantiate(bulletPrefab, shootingOrig[0].position, rotation);
+        }
+    }
 
     public IEnumerator UpdateWeaponStatus(float delay)
     {
@@ -73,7 +83,12 @@ public class RangedEnemy : MonoBehaviour
         {
             weapon.GameObject().SetActive(false);
         }
-        else if (!canShoot && isWeaponActive)
+        
+        if (!canShoot && isWeaponActive)
+        {
+            weapon.GameObject().SetActive(true);
+        }
+        else if (canShoot && isWeaponActive)
         {
             weapon.GameObject().SetActive(true);
         }

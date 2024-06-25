@@ -19,25 +19,15 @@ public class EnemyScript : MonoBehaviour
     [Header("Player")] public GameObject player;
     private float distance;
 
-    private LevelManager levelManager;
     private EnemyMage enemyMage;
     private RangedEnemy rangedEnemy;
 
     public event Action<GameObject> OnEnemyKilled;
+    public event Action OnEnemyRevived;
     
     private void Start()
     {
-        levelManager = FindObjectOfType<LevelManager>();
-        capsuleCollider2D = GetComponent<CapsuleCollider2D>();
-        capsuleCollider2D.isTrigger = false;
-        animator = GetComponent<Animator>();
-
-        if (isRangedEnemy)
-        {
-            rangedEnemy = GetComponent<RangedEnemy>();
-        }
-
-        currentHealth = health;
+        EnemySetup();
     }
 
     void Update()
@@ -54,23 +44,57 @@ public class EnemyScript : MonoBehaviour
         }
     }
 
+    private void EnemySetup()
+    {
+        isAlive = true;
+        currentHealth = health;
+        
+        if (capsuleCollider2D == null)
+        {
+            capsuleCollider2D = gameObject.GetComponent<CapsuleCollider2D>();
+        }
+        
+        capsuleCollider2D.enabled = true;
+        capsuleCollider2D.isTrigger = false;
+
+        if (animator == null)
+        {
+            animator = gameObject.GetComponent<Animator>();
+        }
+        
+        if (isRangedEnemy)
+        {
+            if (rangedEnemy == null)
+            {
+                rangedEnemy = gameObject.GetComponent<RangedEnemy>();
+            }
+            
+            rangedEnemy.isWeaponActive = true;
+            rangedEnemy.canShoot = true;
+            StartCoroutine(rangedEnemy.UpdateWeaponStatus(0f));
+        }
+    }
+
     // Daño del Enemigo
     public void EnemyDamage(float damage)
     {
-        currentHealth -= damage;
+        if (isAlive)
+        {
+            currentHealth -= damage;
+        }
+        
         if (currentHealth <= 0)
         {
-            levelManager.enemyCounter++;
+            isAlive = false;
             capsuleCollider2D.enabled = false;
             animator.SetTrigger("isDead");
-            isAlive = false;
 
             if (OnEnemyKilled != null)
             {
                 OnEnemyKilled(this.GameObject());
             }
             
-            if (isRangedEnemy)
+            if (isRangedEnemy && gameObject.activeInHierarchy)
             {
                 rangedEnemy.canShoot = false;
                 rangedEnemy.isWeaponActive = false;
@@ -83,7 +107,6 @@ public class EnemyScript : MonoBehaviour
     {
         if (other.CompareTag("Shield"))
         {
-            levelManager.enemyCounter++;
             capsuleCollider2D.enabled = false;
             animator.SetTrigger("isDead");
             isAlive = false;
@@ -91,7 +114,6 @@ public class EnemyScript : MonoBehaviour
             if (OnEnemyKilled != null)
             {
                 OnEnemyKilled(this.GameObject());
-                Debug.Log("EVENT");
             }
 
             if (isRangedEnemy)
@@ -107,7 +129,6 @@ public class EnemyScript : MonoBehaviour
     {
         if (!isAlive)
         {
-            levelManager.enemyCounter--;
             isAlive = true;
             currentHealth = health;
             animator.SetTrigger("isRevived");
@@ -115,13 +136,20 @@ public class EnemyScript : MonoBehaviour
             if (isRangedEnemy)
             {
                 rangedEnemy.isWeaponActive = true;
-                StartCoroutine(rangedEnemy.UpdateWeaponStatus(0.5f));
+                StartCoroutine(rangedEnemy.UpdateWeaponStatus(1f));
             }
+
+            OnEnemyRevived?.Invoke();
             
             yield return new WaitForSeconds(delay); //Delay antes de que se pueda volver a atacar
 
             capsuleCollider2D.enabled = true;
             rangedEnemy.canShoot = true;
         }
+    }
+
+    private void OnEnable()
+    {
+        EnemySetup();
     }
 }
