@@ -60,7 +60,29 @@ public class RangedEnemy : MonoBehaviour
             }
             
             coolDown = shootCoolDown;
+<<<<<<< HEAD
         }      
+=======
+        }
+        else if (coolDown <= 0f && canShoot && isSmg)
+        {
+            StartCoroutine(ShootSMG(0.2f)); //Delay entre disparos
+            
+            coolDown = shootCoolDown;
+        }
+    }
+
+    private IEnumerator ShootSMG(float delay)
+    {
+        for (int i = 0; i < 3; i++) //Cantidad de veces que disparará el arma (3 disparos - efecto ráfaga)
+        {
+            yield return new WaitForSeconds(delay);
+        
+            var rotation = shootingOrig[0].rotation;
+            rotation *= Quaternion.Euler(0, 0, -90);
+            Instantiate(bulletPrefab, shootingOrig[0].position, rotation);
+        }
+>>>>>>> parent of 0bc23d7 (Enemy Pool completed.)
     }
    
 

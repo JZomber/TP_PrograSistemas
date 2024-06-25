@@ -12,12 +12,13 @@ EditorUserSettings:
       value: 5605025354055f585d5d5b7015250e44174f1e722a7174312c2b4835e6e66439
       flags: 0
     RecentlyUsedSceneGuid-2:
-      value: 5403510757000f590b5b5e244271594446154c7f7a7f24607a2d1961e4e6353a
+      value: 5605025354055f585d5d5b7015250e44174f1e722a7174312c2b4835e6e66439
       flags: 0
     RecentlyUsedSceneGuid-3:
-      value: 545451035d535e5e0f0b08204175594447151c797d7f2331747e4f6ab1b0603e
+      value: 5403510757000f590b5b5e244271594446154c7f7a7f24607a2d1961e4e6353a
       flags: 0
     RecentlyUsedSceneGuid-4:
+<<<<<<< HEAD
       value: 5453075300010d5a5c5d5d2442750b4413154b29287871677f2c1b61e3b86368
       flags: 0
     RecentlyUsedSceneGuid-5:
@@ -25,6 +26,15 @@ EditorUserSettings:
       flags: 0
     RecentlyUsedSceneGuid-6:
       value: 5b57005652075d020b5c0a76437006444415497b7f707e687f2a1b31b4b83269
+=======
+      value: 545451035d535e5e0f0b08204175594447151c797d7f2331747e4f6ab1b0603e
+      flags: 0
+    RecentlyUsedSceneGuid-5:
+      value: 0650030753510f5f080d5823127b0944464f1a2c7e7e7432297d1c37e4b5376f
+      flags: 0
+    RecentlyUsedSceneGuid-6:
+      value: 5255075504565c5a0c5f597343705c4414154e28797d7768797a1f64e0e56069
+>>>>>>> parent of 0bc23d7 (Enemy Pool completed.)
       flags: 0
     RecentlyUsedSceneGuid-7:
       value: 5255075504565c5a0c5f597343705c4414154e28797d7768797a1f64e0e56069
