@@ -22,67 +22,53 @@ public class EnemyMage : MonoBehaviour
 
     private bool isReviving;
 
-    public event Action<GameObject> OnMageKilled;
-
     // Start is called before the first frame update
     void Start()
-    {
-        EnemySetup();
-    }
-
-    private void EnemySetup()
     {
         isAlive = true;
         currentHealth = health;
         
+        capsuleCollider2D = GetComponent<CapsuleCollider2D>();
+        capsuleCollider2D.enabled = false;
+        
         enemyShield.SetActive(true);
-        
+
         spawnPoint = transform.position;
-        
-        enemyManager = FindObjectOfType<EnemyManager>();
-        
-        if (enemyManager != null)
+
+        if (enemyManager != null && isAlive)
         {
             enemyManager.OnMageCalled += MoveToTarget;
             Debug.Log($"{gameObject.name} SE HA SUBSCRITO AL EVENTO OnMageCalled");
         }
-
-        if (capsuleCollider2D == null)
+        else
         {
-            capsuleCollider2D = GetComponent<CapsuleCollider2D>();
-            capsuleCollider2D.enabled = false;
+            Debug.LogError($"OBJ: {gameObject.name} | REFERENCIA {enemyManager} NO ENCONTRADA");
         }
     }
 
     private void MoveToTarget(GameObject target)
     {
-        //Debug.Log($"MOVIENDO HACIA {target}");
+        Debug.Log($"MOVIENDO HACIA {target}");
 
-        if (isAlive)
-        {
-            isReviving = true;
-            UpdateColliders();
+        isReviving = true;
+        UpdateColliders();
         
-            gameObject.transform.position = target.transform.position + new Vector3(0, 1, 0);
-            StartCoroutine(ReviveTarget(3, target));
-        }
+        gameObject.transform.position = target.transform.position + new Vector3(0, 1, 0);
+        StartCoroutine(ReviveTarget(2, target));
     }
 
     private IEnumerator ReviveTarget(float delay, GameObject target)
     {
         yield return new WaitForSeconds(delay);
+        
+        StartCoroutine(target.GetComponent<EnemyScript>().EnemyRevive(3f));
 
-        if (isAlive)
-        {
-            StartCoroutine(target.GetComponent<EnemyScript>().EnemyRevive(2f));
-            
-            StartCoroutine(Relocate(3f));
-        }
+        StartCoroutine(Relocate(1f));
     }
 
     private void UpdateColliders() //Controla cuando el mago/necro es vulnerable o no
     {
-        if (isReviving && isAlive)
+        if (isReviving)
         {
             enemyShield.SetActive(false);
             capsuleCollider2D.enabled = true;
@@ -96,10 +82,9 @@ public class EnemyMage : MonoBehaviour
 
     private IEnumerator Relocate(float delay)
     {
-        yield return new WaitForSeconds(delay);
-        
         if (isAlive)
         {
+            yield return new WaitForSeconds(delay);
             isReviving = false;
             UpdateColliders();
         
@@ -109,30 +94,14 @@ public class EnemyMage : MonoBehaviour
     
     public void EnemyDamage(int damage)
     {
-        if (isAlive)
+        currentHealth -= damage;
+        if (currentHealth <= 0)
         {
-            currentHealth -= damage;
-        }
-        
-        if (currentHealth <= 0 && isAlive)
-        {
-            isAlive = false;
-            capsuleCollider2D.enabled = isAlive;
-            enemyShield.SetActive(isAlive);
+            capsuleCollider2D.enabled = false;
             animator.SetTrigger("isDead");
+            isAlive = false;
             
-            OnMageKilled?.Invoke(gameObject);
             enemyManager.OnMageCalled -= MoveToTarget;
         }
-    }
-
-    private void OnEnable()
-    {
-        EnemySetup();
-    }
-
-    private void OnDisable()
-    {
-        enemyManager.OnMageCalled -= MoveToTarget;
     }
 }

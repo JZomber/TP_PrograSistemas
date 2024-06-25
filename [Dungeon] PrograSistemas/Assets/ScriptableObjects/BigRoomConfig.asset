@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36df41cb11cc39447a89eec5dc2b8c76, type: 3}
   m_Name: BigRoomConfig
   m_EditorClassIdentifier: 
-  easyDiffPoints: 80
-  hardDiffPoints: 160
+  easyDiffPoints: 50
+  hardDiffPoints: 80
+  enemySpawns: []
